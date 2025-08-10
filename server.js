@@ -1,44 +1,34 @@
 import express from 'express';
-import Groq from 'groq-sdk';
-import dotenv from 'dotenv';
 import cors from 'cors';
-
-dotenv.config();
+import bodyParser from 'body-parser';
+import Groq from 'groq-sdk';
 
 const app = express();
-const PORT = process.env.PORT || 3000;
 
-// Allow requests from your site only (change to your domain), or set origin: true to allow all.
+// Allow your website's domain
 app.use(cors({
-  origin: ['https://chchweather.org.nz', 'http://localhost:8000'] // adjust as needed
+  origin: 'https://chchweather.org.nz' // replace with your actual site URL
 }));
-app.use(express.json());
 
-if (!process.env.GROQ_API_KEY) {
-  console.warn('Warning: GROQ_API_KEY not set in environment. Set it before running.');
-}
+app.use(bodyParser.json());
 
-const client = new Groq({ apiKey: process.env.GROQ_API_KEY });
+const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 app.post('/ask', async (req, res) => {
-  const { prompt } = req.body;
-  if (!prompt) return res.status(400).json({ error: 'Missing prompt' });
-
   try {
-    const chatCompletion = await client.chat.completions.create({
-      model: 'llama3-8b-8192',
+    const { prompt } = req.body;
+    const chatCompletion = await groq.chat.completions.create({
       messages: [{ role: 'user', content: prompt }],
+      model: "meta-llama/llama-4-scout-17b-16e-instruct",
     });
-
-    const responseText = chatCompletion?.choices?.[0]?.message?.content ?? '';
-    res.json({ response: responseText });
+    res.json({ reply: chatCompletion.choices[0].message.content });
   } catch (err) {
-    console.error('Groq error:', err);
-    // If the SDK throws APIError subclasses you can inspect them; return the message
-    res.status(500).json({ error: err?.message ?? 'Internal server error' });
+    console.error(err);
+    res.status(500).send('Error generating summary');
   }
 });
 
+app.listen(3000, () => console.log('Server running on port 3000'));
 app.listen(PORT, () => {
   console.log(`Server listening on port ${PORT}`);
 });
