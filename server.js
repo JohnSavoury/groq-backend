@@ -36,9 +36,9 @@ app.post('/ask', async (req, res) => {
   try {
     const { prompt } = req.body;
     const chatCompletion = await groq.chat.completions.create({
-      messages: [{ role: 'user', content: prompt }],
-      model: "meta-llama/llama-4-scout-17b-16e-instruct",
-    });
+  messages: [{ role: 'user', content: prompt }],
+  model: "openai/gpt-oss-120b",
+});
 
     res.json({ reply: chatCompletion.choices[0].message.content });
   } catch (err) {
